@@ -23,10 +23,10 @@ func Register(c *fiber.Ctx) error {
 	}
 
 	user := models.User{
-		FirstName:     data["first_name"],
-		LastName:      data["last_name"],
-		Email:         data["email"],
-		IsAmbasssador: false,
+		FirstName:    data["first_name"],
+		LastName:     data["last_name"],
+		Email:        data["email"],
+		IsAmbassador: false,
 	}
 	user.SetPassword(data["password"])
 
@@ -56,9 +56,9 @@ func Login(c *fiber.Ctx) error {
 		})
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"Subject":   strconv.Itoa(int(user.Id)),
-		"ExpiresAt": time.Now().Add(time.Hour * 24).Unix(),
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
+		Subject:   strconv.Itoa(int(user.Id)),
+		ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
 	})
 	// Todo: change the signed string to something more secure...
 	encodedToken, err := token.SignedString([]byte("toto"))
@@ -81,4 +81,23 @@ func Login(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"message": "success",
 	})
+}
+
+func User(c *fiber.Ctx) error {
+	cookie := c.Cookies("jwt")
+
+	token, err := jwt.ParseWithClaims(cookie, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte("toto"), nil
+	})
+	if err != nil || !token.Valid {
+		c.Status(fiber.StatusUnauthorized)
+		return c.JSON(fiber.Map{
+			"message": "Unauthenticated",
+		})
+	}
+	payload := token.Claims.(*jwt.StandardClaims)
+
+	var user models.User
+	database.DB.Where("id = ?", payload.Subject).First(&user)
+	return c.JSON(user)
 }
