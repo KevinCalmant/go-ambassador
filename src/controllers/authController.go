@@ -3,14 +3,12 @@ package controllers
 import (
 	"ambassador/src/database"
 	"ambassador/src/models"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 	"strconv"
 	"time"
 )
-
-var tokenEncodeString string = "something"
 
 func Register(c *fiber.Ctx) error {
 	var data map[string]string
@@ -52,25 +50,36 @@ func Login(c *fiber.Ctx) error {
 		})
 	}
 
-	err := bcrypt.CompareHashAndPassword(user.Password, []byte(data["password"]))
-	if err != nil {
+	if err := bcrypt.CompareHashAndPassword(user.Password, []byte(data["password"])); err != nil {
 		c.Status(fiber.StatusForbidden)
 		return c.JSON(fiber.Map{
 			"message": "Invalid Credentials",
 		})
 	}
 
-	payload := jwt.StandardClaims{
-		Issuer:    strconv.Itoa(int(user.Id)),
-		ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
-	}
-	token, err := jwt.NewWithClaims(jwt.SigningMethodES256, payload).SignedString([]byte("toto"))
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"Subject":   strconv.Itoa(int(user.Id)),
+		"ExpiresAt": time.Now().Add(time.Hour * 24).Unix(),
+	})
+	// Todo: change the signed string to something more secure...
+	encodedToken, err := token.SignedString([]byte("toto"))
 	if err != nil {
 		c.Status(fiber.StatusBadRequest)
 		return c.JSON(fiber.Map{
-			"message": err.Error(),
+			"message": "Invalid Credentials",
 		})
 	}
 
-	return c.JSON(token)
+	// The cookie is HTTPOnly because its only purpose is to be sent from the frontend to the backend.
+	cookie := fiber.Cookie{
+		Name:     "jwt",
+		Value:    encodedToken,
+		Expires:  time.Now().Add(time.Hour * 24),
+		HTTPOnly: true,
+	}
+	c.Cookie(&cookie)
+
+	return c.JSON(fiber.Map{
+		"message": "success",
+	})
 }
