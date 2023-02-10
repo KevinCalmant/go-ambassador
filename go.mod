@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
+	github.com/bxcodec/faker/v3 v3.8.1 // indirect
 	github.com/go-sql-driver/mysql v1.7.0 // indirect
 	github.com/gofiber/fiber/v2 v2.42.0 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
