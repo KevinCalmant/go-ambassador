@@ -132,5 +132,6 @@ func UpdatePassword(c *fiber.Ctx) error {
 		Id: id,
 	}
 	user.SetPassword(data["password"])
+	database.DB.Model(&user).Updates(&user)
 	return c.JSON(user)
 }
