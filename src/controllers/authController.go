@@ -113,11 +113,11 @@ func UpdateInfo(c *fiber.Ctx) error {
 	id, _ := middlewares.GetUserId(c)
 
 	user := models.User{
-		Id:        id,
 		FirstName: data["firstname"],
 		LastName:  data["lastname"],
 		Email:     data["email"],
 	}
+	user.Id = id
 	database.DB.Model(&user).Updates(&user)
 	return c.JSON(user)
 }
@@ -128,9 +128,8 @@ func UpdatePassword(c *fiber.Ctx) error {
 		return err
 	}
 	id, _ := middlewares.GetUserId(c)
-	user := models.User{
-		Id: id,
-	}
+	user := models.User{}
+	user.Id = id
 	user.SetPassword(data["password"])
 	database.DB.Model(&user).Updates(&user)
 	return c.JSON(user)

@@ -3,7 +3,7 @@ package models
 import "golang.org/x/crypto/bcrypt"
 
 type User struct {
-	Id           uint   `json:"id" gorm:"unique"`
+	Model
 	FirstName    string `json:"firstname"`
 	LastName     string `json:"lastname"`
 	Email        string `json:"email" gorm:"unique"`
