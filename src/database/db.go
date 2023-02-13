@@ -18,7 +18,7 @@ func Connect() {
 }
 
 func Migrate() {
-	err := DB.AutoMigrate(models.User{}, models.Product{})
+	err := DB.AutoMigrate(models.User{}, models.Product{}, models.Link{}, models.Order{}, models.OrderItem{})
 	if err != nil {
 		panic("Migration has failed")
 	}
