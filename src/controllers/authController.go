@@ -5,8 +5,6 @@ import (
 	"ambassador/src/middlewares"
 	"ambassador/src/models"
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -58,12 +56,22 @@ func Login(c *fiber.Ctx) error {
 		})
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
-		Subject:   strconv.Itoa(int(user.Id)),
-		ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
-	})
-	// Todo: change the signed string to something more secure...
-	encodedToken, err := token.SignedString([]byte("toto"))
+	isAmbassador := strings.Contains(c.Path(), "/api/ambassador")
+	var scope string
+	if isAmbassador {
+		scope = "ambassador"
+	} else {
+		scope = "admin"
+	}
+
+	if !isAmbassador && user.IsAmbassador {
+		c.Status(fiber.StatusUnauthorized)
+		return c.JSON(fiber.Map{
+			"message": "Unauthorized",
+		})
+	}
+
+	token, err := middlewares.GenerateJWT(user.Id, scope)
 	if err != nil {
 		c.Status(fiber.StatusBadRequest)
 		return c.JSON(fiber.Map{
@@ -74,7 +82,7 @@ func Login(c *fiber.Ctx) error {
 	// The cookie is HTTPOnly because its only purpose is to be sent from the frontend to the backend.
 	cookie := fiber.Cookie{
 		Name:     "jwt",
-		Value:    encodedToken,
+		Value:    token,
 		Expires:  time.Now().Add(time.Hour * 24),
 		HTTPOnly: true,
 	}
